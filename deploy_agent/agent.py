@@ -77,12 +77,9 @@ def clone_and_test_repo(github_url: str) -> dict:
         
         print(f"✅ Repository cloned successfully to {clone_path}")
         
-        # Look for test files (excluding deploy_agent folder)
+        # Look for test files
         test_files = []
         for root, dirs, files in os.walk(clone_path):
-            # Skip deploy_agent directory
-            if 'deploy_agent' in root:
-                continue
             for file in files:
                 if file.startswith('test_') and file.endswith('.py'):
                     test_files.append(os.path.join(root, file))
