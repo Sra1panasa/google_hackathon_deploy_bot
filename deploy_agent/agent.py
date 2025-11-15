@@ -164,7 +164,7 @@ def deploy_to_cloud_run(repo_path: str, repo_name: str) -> dict:
         dict: Deployment result with service URL
     """
     try:
-        # Set environment variables
+        # Set environment variables from .env
         project = os.environ.get('GOOGLE_CLOUD_PROJECT', 'mbs-graphrag')
         region = os.environ.get('GOOGLE_CLOUD_LOCATION', 'us-central1')
         service_name = f"deployed-{repo_name.lower()}"
@@ -268,11 +268,6 @@ def confirm_deployment(confirmation: str) -> dict:
 # Create the deployment automation agent
 root_agent = Agent(
     model='gemini-2.5-flash',
-    model_kwargs={
-        'vertexai': True,
-        'project': os.environ.get('GOOGLE_CLOUD_PROJECT', 'mbs-graphrag'),
-        'location': os.environ.get('GOOGLE_CLOUD_LOCATION', 'europe-west2'),
-    },
     name='deploy_automation_agent',
     description="Automates deployment of applications to cloud platforms (AWS, GCP, Azure).",
     instruction="""You are an AI deployment automation assistant. Your job is to help users deploy their applications to cloud platforms.

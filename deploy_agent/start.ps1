@@ -8,7 +8,7 @@ Write-Host ""
 
 # Set environment variables
 $env:GOOGLE_CLOUD_PROJECT = "mbs-graphrag"
-$env:GOOGLE_CLOUD_LOCATION = "europe-west2"
+$env:GOOGLE_CLOUD_LOCATION = "us-central1"
 
 Write-Host "Environment Configuration:" -ForegroundColor Yellow
 Write-Host "   Project: $env:GOOGLE_CLOUD_PROJECT"
