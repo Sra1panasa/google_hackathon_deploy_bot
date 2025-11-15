@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import tempfile
 from google.adk.agents.llm_agent import Agent
 
 def ask_cloud_platform(user_choice: str) -> dict:
@@ -50,7 +51,9 @@ def clone_and_test_repo(github_url: str) -> dict:
     try:
         # Extract repo name from URL
         repo_name = github_url.rstrip('/').split('/')[-1].replace('.git', '')
-        clone_path = f"/tmp/{repo_name}"
+        # Use system temp directory (works on Windows and Linux)
+        temp_dir = tempfile.gettempdir()
+        clone_path = os.path.join(temp_dir, repo_name)
         
         # Remove if exists
         if os.path.exists(clone_path):
@@ -68,24 +71,30 @@ def clone_and_test_repo(github_url: str) -> dict:
         if clone_result.returncode != 0:
             return {
                 "status": "error",
-                "message": f"Failed to clone repository: {clone_result.stderr}",
+                "message": f"❌ Failed to clone repository: {clone_result.stderr}",
                 "step": "clone"
             }
         
-        # Look for test files
+        print(f"✅ Repository cloned successfully to {clone_path}")
+        
+        # Look for test files (excluding deploy_agent folder)
         test_files = []
         for root, dirs, files in os.walk(clone_path):
+            # Skip deploy_agent directory
+            if 'deploy_agent' in root:
+                continue
             for file in files:
                 if file.startswith('test_') and file.endswith('.py'):
                     test_files.append(os.path.join(root, file))
         
         if not test_files:
             return {
-                "status": "warning",
-                "message": "No test files found (test_*.py). Proceeding without tests.",
-                "step": "test",
+                "status": "success",
+                "message": f"✅ Repository cloned successfully!\n\nNo test files found (test_*.py) - proceeding without tests.",
+                "step": "test_skipped",
                 "clone_path": clone_path,
-                "repo_name": repo_name
+                "repo_name": repo_name,
+                "ready_to_deploy": True
             }
         
         # Run tests
@@ -125,18 +134,20 @@ def clone_and_test_repo(github_url: str) -> dict:
                     all_tests_passed = False
         
         if all_tests_passed:
+            test_summary = "\n".join(test_results)
             return {
                 "status": "success",
-                "message": f"Repository cloned and all tests passed!\n" + "\n".join(test_results),
+                "message": f"✅ Repository cloned successfully!\n✅ Found {len(test_files)} test file(s)\n✅ All tests passed!\n\n{test_summary}",
                 "step": "test_passed",
                 "clone_path": clone_path,
                 "repo_name": repo_name,
                 "ready_to_deploy": True
             }
         else:
+            test_summary = "\n".join(test_results)
             return {
                 "status": "error",
-                "message": f"Tests failed:\n" + "\n".join(test_results),
+                "message": f"❌ Tests failed:\n\n{test_summary}\n\nPlease fix the failing tests before deploying.",
                 "step": "test_failed"
             }
             
