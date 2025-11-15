@@ -55,9 +55,21 @@ def clone_and_test_repo(github_url: str) -> dict:
         temp_dir = tempfile.gettempdir()
         clone_path = os.path.join(temp_dir, repo_name)
         
-        # Remove if exists
+        # Remove if exists (with Windows-friendly error handling)
         if os.path.exists(clone_path):
-            shutil.rmtree(clone_path)
+            try:
+                # On Windows, use rmtree with onerror handler
+                def remove_readonly(func, path, _):
+                    """Clear the readonly bit and retry removal."""
+                    os.chmod(path, 0o777)
+                    func(path)
+                
+                shutil.rmtree(clone_path, onerror=remove_readonly)
+            except Exception as e:
+                print(f"Warning: Could not remove existing directory: {e}")
+                # Try using a unique name instead
+                import random
+                clone_path = os.path.join(temp_dir, f"{repo_name}_{random.randint(1000, 9999)}")
         
         # Clone repository
         print(f"Cloning repository: {github_url}")
